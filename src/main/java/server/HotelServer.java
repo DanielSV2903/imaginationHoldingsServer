@@ -1,9 +1,11 @@
 package server;
 
 
+import com.imaginationHoldings.data.GuestData;
 import com.imaginationHoldings.data.HotelData;
 import com.imaginationHoldings.data.HotelServiceData;
 import com.imaginationHoldings.data.RoomData;
+import com.imaginationHoldings.domain.Guest;
 import com.imaginationHoldings.domain.Hotel;
 import com.imaginationHoldings.domain.Room;
 import com.imaginationHoldings.domain.RoomType;
@@ -16,6 +18,7 @@ import java.util.*;
 public class HotelServer {
     private static HotelData hotelData;
     private static RoomData roomData;
+    private static GuestData guestData;
     private static HotelServiceData hotelServiceData;
     private static List<Hotel> hotels;
 
@@ -24,6 +27,7 @@ public class HotelServer {
         hotels=new ArrayList<>();
         hotelData=new HotelData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\hotels.dat");
         roomData=new RoomData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\rooms.dat");
+        guestData=new GuestData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\guests.dat");
         hotelServiceData=new HotelServiceData(hotelData,roomData);
         preloadHotels();
         ServerSocket serverSocket = new ServerSocket(5000);
@@ -36,10 +40,6 @@ public class HotelServer {
     }
 
     private static void preloadHotels() throws IOException {
-        Hotel h1 = new Hotel(1, "Hotel Paradise", "Dominical");
-        h1.registerRooms(new Room(101, RoomType.SINGLE,h1,"First Floor"));
-        h1.registerRooms(new Room(102, RoomType.DOUBLE,h1,"First Floor"));
-        hotelData.insert(h1);
         hotels=hotelData.findAll();
     }
 
@@ -84,7 +84,7 @@ public class HotelServer {
                             RoomType type = RoomType.valueOf(parts[2]);
                             int hotelId = Integer.parseInt(parts[3]);
                             String location = parts[4];
-                            Hotel hotel = hotelData.findById(hotelId); // Implementar este método
+                            Hotel hotel = hotelData.findById(hotelId);
                             if (hotel != null) {
                                 Room room = new Room(roomNumber, type, hotel, location);
                                 roomData.insert(room);
@@ -102,9 +102,16 @@ public class HotelServer {
                         }
 
                         case Protocol.ADD_GUEST -> {
-                            // parts: ADD_GUEST|id|name|email|...
+//                             parts: ADD_GUEST|name|lastName|gender|id|birthDate
                             // Si tenés GuestData implementado:
                             // Guest g = new Guest(...); guestData.insert(g);
+                            String guestName = parts[1];
+                            String lastName = parts[2];
+                            String gender = parts[3];
+                            int id = Integer.parseInt(parts[4]);
+                            String birthDate = parts[5];
+                            Guest guest=new Guest(guestName,lastName,gender,id,birthDate);
+                            guestData.insert(guest);
                             writer.println("GUEST_REGISTERED");
                         }
 

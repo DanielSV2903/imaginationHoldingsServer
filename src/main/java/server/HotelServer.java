@@ -130,7 +130,10 @@ public class HotelServer {
                             }
 
                             case Protocol.DELETE_HOTEL -> {
-                                objectOut.writeObject("HOTEL_DELETED");
+                                int id= (int) data;
+                                hotelData.delete(id);
+                                Response response=new Response("HOTEL_DELETED");
+                                objectOut.writeObject(response);
                                 objectOut.flush();
                             }
 

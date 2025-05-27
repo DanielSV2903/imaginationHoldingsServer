@@ -58,7 +58,7 @@ public class HotelServer {
                     ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
                     ObjectInputStream input = new ObjectInputStream(socket.getInputStream())
             ) {
-                preloadHotels();
+
 
                 try {
                     while (true) {
@@ -108,7 +108,10 @@ public class HotelServer {
                                 List<Room> rooms = roomData.findAll(hotels);
                                 objectOut.writeObject(rooms);
                                 objectOut.flush();
-                                objectOut.writeObject("OK");
+                            }
+                            case Protocol.GET_BOOKINGS->{
+                                List<Booking> bookings=bookingData.findAll();
+                                objectOut.writeObject(bookings);
                                 objectOut.flush();
                             }
 
@@ -124,9 +127,14 @@ public class HotelServer {
                                 objectOut.flush();
                             }
 
-                            case Protocol.EDIT_HOTELS -> {
-                                objectOut.writeObject("HOTEL_UPDATED");
-                                objectOut.flush();
+                            case Protocol.EDIT_HOTELS -> {//TODO
+                                Hotel hotel= (Hotel) data;
+                                boolean updated=hotelData.update(hotel);
+                                if (updated) {
+                                    Response response=new Response("HOTEL_UPDATED");
+                                    objectOut.writeObject(response);
+                                    objectOut.flush();
+                                }
                             }
 
                             case Protocol.DELETE_HOTEL -> {
@@ -137,13 +145,25 @@ public class HotelServer {
                                 objectOut.flush();
                             }
 
-                            case Protocol.DELETE_ROOM -> {
-                                objectOut.writeObject("ROOM_DELETED");
+                            case Protocol.DELETE_ROOM -> {//TODO
+                                Room room = (data instanceof Room r) ? r : null;
+                                boolean deleted=roomData.delete(room.getRoomNumber());
+                                Response response=new Response("ROOM_DELETED");
+                                if (deleted) {
+                                objectOut.writeObject(response);
                                 objectOut.flush();
+                                } else {
+                                    response=new Response("ROOM_NOT_FOUND");
+                                    objectOut.writeObject(response);
+                                    objectOut.flush();
+                                }
                             }
 
-                            case Protocol.EDIT_ROOM -> {
-                                objectOut.writeObject("ROOM_UPDATED");
+                            case Protocol.EDIT_ROOM -> {//TODO
+                                Room room= (Room) data;
+                                roomData.update(room);
+                                Response response=new Response("ROOM_UPDATED");
+                                objectOut.writeObject(response);
                                 objectOut.flush();
                             }
 
@@ -167,22 +187,28 @@ public class HotelServer {
                                 guest.setFirstName(name);
                                 guest.setLastName(lastName);
                                 Room room = hotelServiceData.findAvaibleRoom(roomType);
-                                try {
-//                                    int size= bookingData.findAll().size();
-                                    Booking booking = new Booking( bookSize+1, room, guest, guestAmount, stayPeriod);
-                                    bookingData.insert(booking);
-                                    Response response=new Response("BOOKING_DONE");
-                                    objectOut.writeObject(response);
-                                    objectOut.flush();
-                                } catch (RoomException e) {
-                                    Response response = new Response("NO_ROOM_AVAILABLE");
-                                    objectOut.writeObject(response);
-                                    objectOut.flush();
-                                }
+                                int size= bookingData.findAll().size();
+                                Booking booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
+                                bookingData.insert(booking);
+                                Response response=new Response("BOOKING_DONE");
+                                objectOut.writeObject(response);
+                                objectOut.flush();
+                            }
+                            case Protocol.CANCEL_RESERVATION ->{
+                                Booking booking = (data instanceof Booking) ? (Booking) data : null;
+                                boolean deleted= bookingData.delete(booking.getId());
+                                Response response;
+                                if (deleted) {
+                                    List<Booking> bookings=bookingData.findAll();
+                                     response=new Response("BOOKING_DELETED");
+                                }else response=new Response("BOOKING_NOT_FOUND");
+                                objectOut.writeObject(response);
+                                objectOut.flush();
                             }
 
                             default -> {
-                                objectOut.writeObject("UNKNOWN_COMMAND");
+                                Response response=new Response("UNKNOWN_COMMAND");
+                                objectOut.writeObject(response);
                                 objectOut.flush();
                             }
                         }
@@ -191,7 +217,7 @@ public class HotelServer {
                     System.out.println("Cliente cerró la conexión.");
                 }
 
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException | RoomException e) {
                 e.printStackTrace();
             }
         }

@@ -25,10 +25,10 @@ public class HotelServer {
     public static void main(String[] args) throws IOException {
         hotels=new ArrayList<>();
         guests=new ArrayList<>();
-        hotelData=new HotelData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\hotels.dat");
-        roomData=new RoomData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\rooms.dat");
-        guestData=new GuestData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\guests.dat");
-        bookingData=new BookingData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\books.dat");
+        hotelData=new HotelData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\hotels.dat");
+        roomData=new RoomData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\rooms.dat");
+        guestData=new GuestData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\guests.dat");
+        bookingData=new BookingData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\books.dat");
         hotelServiceData=new HotelServiceData(hotelData,roomData,guestData,bookingData);
         preloadHotels();
         ServerSocket serverSocket = new ServerSocket(5000);
@@ -76,7 +76,9 @@ public class HotelServer {
 
                         switch (command) {
                             case Protocol.GET_ALL_HOTELS -> {
-                                objectOut.writeObject(hotels);
+                                List<Hotel> hotelList=hotelData.findAll();
+                                hotels=hotelList;
+                                objectOut.writeObject(hotelList);
                                 objectOut.flush();
                             }
 

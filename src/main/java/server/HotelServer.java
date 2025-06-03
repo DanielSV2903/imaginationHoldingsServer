@@ -105,8 +105,9 @@ public class HotelServer {
                                 Room room = (data instanceof Room r) ? r : null;
                                 Hotel hotel = hotelData.findById(room.getHotel().getId());
                                 if (hotel != null) {
+
                                     roomData.insert(room);
-                                    objectOut.writeObject(Response.ROOM_REGISTERED);
+                                    objectOut.writeObject(Response.HOTEL_REGISTERED);
                                     objectOut.flush();
                                 } else {
                                     objectOut.writeObject(Response.HOTEL_NOT_FOUND);
@@ -134,7 +135,7 @@ public class HotelServer {
                                 Guest guest = new Guest(guestName, lastName, gender, id, birthDate);
 
                                 if (guestData.findById(guest.getId()) != null) {
-                                    objectOut.writeObject(Response.GUEST_ALREADY_REGISTERED);
+                                    objectOut.writeObject(Response.GUEST_ALREADY_EXISTS);
                                 } else {
                                     guestData.insert(guest);
                                     objectOut.writeObject(Response.GUEST_REGISTERED);

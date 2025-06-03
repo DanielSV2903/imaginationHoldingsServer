@@ -105,10 +105,20 @@ public class HotelServer {
                                 Room room = (data instanceof Room r) ? r : null;
                                 Hotel hotel = hotelData.findById(room.getHotel().getId());
                                 if (hotel != null) {
-
-                                    roomData.insert(room);
-                                    objectOut.writeObject(Response.HOTEL_REGISTERED);
-                                    objectOut.flush();
+                                    List<Room> rooms = hotel.getRooms();
+                                    boolean exists = false;
+                                    for (Room roomActual : rooms) {
+                                        if (roomActual.getRoomNumber() == room.getRoomNumber()) {
+                                            objectOut.writeObject(Response.ROOM_ALREADY_EXISTS);
+                                            exists = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!exists) {
+                                        roomData.insert(room);
+                                        objectOut.writeObject(Response.HOTEL_REGISTERED);
+                                        objectOut.flush();
+                                    }
                                 } else {
                                     objectOut.writeObject(Response.HOTEL_NOT_FOUND);
                                     objectOut.flush();

@@ -25,11 +25,11 @@ public class HotelServer {
     public static void main(String[] args) throws IOException {
         hotels=new ArrayList<>();
         guests=new ArrayList<>();
-        hotelData=new HotelData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\hotels.dat");
-        roomData=new RoomData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\rooms.dat");
-        guestData=new GuestData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\guests.dat");
-        bookingData=new BookingData("C:\\Users\\Lab01\\Desktop\\proyecto progra2\\imaginationHoldingsServer\\data\\books.dat");
-        hotelServiceData=new HotelServiceData(hotelData,roomData,guestData,bookingData);
+        hotelData=new HotelData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\hotels.dat");
+        roomData=new RoomData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\rooms.dat");
+        guestData=new GuestData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\guests.dat");
+        bookingData=new BookingData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\books.dat");
+        hotelServiceData = new HotelServiceData(hotelData,roomData,guestData,bookingData);
         preloadHotels();
         ServerSocket serverSocket = new ServerSocket(5000);
         System.out.println("Servidor escuchando en puerto 5000...");
@@ -52,6 +52,7 @@ public class HotelServer {
         public ClientHandler(Socket socket) {
             this.socket = socket;
         }
+
         @Override
         public void run() {
             try (
@@ -87,9 +88,16 @@ public class HotelServer {
                                 String name = parts[2];
                                 String location = parts[3];
                                 Hotel hotel = new Hotel(id, name, location);
-                                hotelData.insert(hotel);
-                                hotels = hotelData.findAll();
-                                Response response=new Response("HOTEL REGISTERED");
+
+                                Response response;
+
+                                if (hotelData.findById(id) != null) {
+                                    response = new Response("HOTEL_ALREADY_EXISTS");
+                                } else {
+                                    hotelData.insert(hotel);
+                                    hotels = hotelData.findAll();
+                                    response=new Response("HOTEL_REGISTERED");
+                                }
                                 objectOut.writeObject(response);
                             }
 
@@ -124,8 +132,14 @@ public class HotelServer {
                                 int id = Integer.parseInt(parts[4]);
                                 String birthDate = parts[5];
                                 Guest guest = new Guest(guestName, lastName, gender, id, birthDate);
-                                guestData.insert(guest);
-                                objectOut.writeObject("GUEST_REGISTERED");
+
+                                if (guestData.findById(guest.getId()) != null) {
+                                    objectOut.writeObject("GUEST_ALREADY_REGISTERED");
+                                } else {
+                                    guestData.insert(guest);
+                                    objectOut.writeObject("GUEST_REGISTERED");
+                                }
+
                                 objectOut.flush();
                             }
 

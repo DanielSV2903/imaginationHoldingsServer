@@ -89,7 +89,7 @@ public class HotelServer {
                                 Hotel hotel = new Hotel(id, name, location);
                                 hotelData.insert(hotel);
                                 hotels = hotelData.findAll();
-                                Response response=new Response("HOTEL REGISTERED");
+                                Response response=new Response(Response.HOTEL_REGISTERED);
                                 objectOut.writeObject(response);
                             }
 
@@ -98,10 +98,10 @@ public class HotelServer {
                                 Hotel hotel = hotelData.findById(room.getHotel().getId());
                                 if (hotel != null) {
                                     roomData.insert(room);
-                                    objectOut.writeObject("ROOM_REGISTERED");
+                                    objectOut.writeObject(Response.ROOM_REGISTERED);
                                     objectOut.flush();
                                 } else {
-                                    objectOut.writeObject("HOTEL_NOT_FOUND");
+                                    objectOut.writeObject(Response.HOTEL_NOT_FOUND);
                                     objectOut.flush();
                                 }
                             }
@@ -125,7 +125,7 @@ public class HotelServer {
                                 String birthDate = parts[5];
                                 Guest guest = new Guest(guestName, lastName, gender, id, birthDate);
                                 guestData.insert(guest);
-                                objectOut.writeObject("GUEST_REGISTERED");
+                                objectOut.writeObject(Response.GUEST_REGISTERED);
                                 objectOut.flush();
                             }
 
@@ -133,7 +133,7 @@ public class HotelServer {
                                 Hotel hotel= (Hotel) data;
                                 boolean updated=hotelData.update(hotel);
                                 if (updated) {
-                                    Response response=new Response("HOTEL_UPDATED");
+                                    Response response=new Response(Response.HOTEL_UPDATED);
                                     objectOut.writeObject(response);
                                     objectOut.flush();
                                 }
@@ -142,7 +142,7 @@ public class HotelServer {
                             case Protocol.DELETE_HOTEL -> {
                                 int id= (int) data;
                                 hotelData.delete(id);
-                                Response response=new Response("HOTEL_DELETED");
+                                Response response=new Response(Response.HOTEL_DELETED);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                             }
@@ -150,12 +150,12 @@ public class HotelServer {
                             case Protocol.DELETE_ROOM -> {//TODO
                                 Room room = (data instanceof Room r) ? r : null;
                                 boolean deleted=roomData.delete(room.getRoomNumber());
-                                Response response=new Response("ROOM_DELETED");
+                                Response response=new Response(Response.ROOM_DELETED);
                                 if (deleted) {
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                                 } else {
-                                    response=new Response("ROOM_NOT_FOUND");
+                                    response=new Response(Response.ROOM_NOT_FOUND);
                                     objectOut.writeObject(response);
                                     objectOut.flush();
                                 }
@@ -164,7 +164,7 @@ public class HotelServer {
                             case Protocol.EDIT_ROOM -> {//TODO
                                 Room room= (Room) data;
                                 roomData.update(room);
-                                Response response=new Response("ROOM_UPDATED");
+                                Response response=new Response(Response.ROOM_DELETED);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                             }
@@ -192,7 +192,7 @@ public class HotelServer {
                                 int size= bookingData.findAll().size();
                                 Booking booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
                                 bookingData.insert(booking);
-                                Response response=new Response("BOOKING_DONE");
+                                Response response=new Response(Response.BOOKING_DONE);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                             }
@@ -202,14 +202,14 @@ public class HotelServer {
                                 Response response;
                                 if (deleted) {
                                     List<Booking> bookings=bookingData.findAll();
-                                     response=new Response("BOOKING_DELETED");
-                                }else response=new Response("BOOKING_NOT_FOUND");
+                                     response=new Response(Response.BOOKING_DELETED);
+                                }else response=new Response(Response.BOOKING_NOT_FOUND);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                             }
 
                             default -> {
-                                Response response=new Response("UNKNOWN_COMMAND");
+                                Response response=new Response(Response.UNKNOWN_COMMAND);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
                             }
@@ -225,6 +225,10 @@ public class HotelServer {
         }
     }
 }
+
+
+
+
 //        @Override
 //        public void run() {
 //            try (

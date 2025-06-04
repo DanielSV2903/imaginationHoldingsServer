@@ -25,10 +25,10 @@ public class HotelServer {
     public static void main(String[] args) throws IOException {
         hotels=new ArrayList<>();
         guests=new ArrayList<>();
-        hotelData=new HotelData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\hotels.dat");
-        roomData=new RoomData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\rooms.dat");
-        guestData=new GuestData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\guests.dat");
-        bookingData=new BookingData("D:\\Progra2\\Proyecto 1\\servidor\\imaginationHoldingsServer\\data\\books.dat");
+        hotelData=new HotelData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\hotels.dat");
+        roomData=new RoomData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\rooms.dat");
+        guestData=new GuestData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\guests.dat");
+        bookingData=new BookingData("C:\\Users\\DanielSV\\Documents\\2025\\proyecto progra2\\imaginationHoldingsServer\\data\\books.dat");
         hotelServiceData = new HotelServiceData(hotelData,roomData,guestData,bookingData);
         preloadHotels();
         ServerSocket serverSocket = new ServerSocket(5000);
@@ -135,6 +135,11 @@ public class HotelServer {
                                 objectOut.writeObject(bookings);
                                 objectOut.flush();
                             }
+                            case Protocol.GET_ALL_GUESTS->{
+                                List<Guest> guests=guestData.findAll();
+                                objectOut.writeObject(guests);
+                                objectOut.flush();
+                            }
 
                             case Protocol.ADD_GUEST -> {
                                 String guestName = parts[1];
@@ -153,6 +158,21 @@ public class HotelServer {
 
                                 objectOut.flush();
                             }
+                            case Protocol.EDIT_GUEST -> {
+                                Guest guest = (data instanceof Guest) ? (Guest) data : null;
+                                guestData.update(guest);
+                                Response response=new Response(Response.GUEST_UPDATED);
+                                objectOut.writeObject(response);
+                                objectOut.flush();
+                            }
+
+                            case Protocol.DELETE_GUEST -> {
+                                Guest guest = (data instanceof Guest) ? (Guest) data : null;
+                                guestData.delete(guest.getId());
+                                Response response=new Response(Response.GUEST_DELETED);
+                                objectOut.writeObject(response);
+                                objectOut.flush();
+                            }
 
                             case Protocol.EDIT_HOTELS -> {//TODO
                                 Hotel hotel= (Hotel) data;
@@ -166,6 +186,11 @@ public class HotelServer {
 
                             case Protocol.DELETE_HOTEL -> {
                                 int id= (int) data;
+                                Hotel h= hotelServiceData.findHotelById(id);
+                                List<Room> rooms=h.getRooms();
+                                for (Room room : rooms) {
+                                    roomData.delete(room.getRoomNumber(),id);
+                                }
                                 hotelData.delete(id);
                                 Response response=new Response(Response.HOTEL_DELETED);
                                 objectOut.writeObject(response);
@@ -195,31 +220,66 @@ public class HotelServer {
                             }
 
                             case Protocol.RESERVE_ROOM -> {
-                                String name = parts[1];
-                                String lastName = parts[2];
-                                String checkIn = parts[3];
-                                String checkOut = parts[4];
-                                int id = Integer.parseInt(parts[5]);
-                                String type = parts[6];
-                                RoomType roomType = RoomType.SINGLE;
-                                for (RoomType rType : RoomType.values()) {
-                                    if (rType.getDescription().equals(type)) {
-                                        roomType = rType;
+                                String mode=parts[0];
+                                switch (mode) {
+                                    case "1":
+                                        String name = parts[1];
+                                        String lastName = parts[2];
+                                        String checkIn = parts[3];
+                                        String checkOut = parts[4];
+                                        int id = Integer.parseInt(parts[5]);
+                                        String type = parts[6];
+                                        RoomType roomType = RoomType.SINGLE;
+                                        for (RoomType rType : RoomType.values()) {
+                                            if (rType.getDescription().equals(type)) {
+                                                roomType = rType;
+                                                break;
+                                            }
+                                        }
+                                        int guestAmount = Integer.parseInt(parts[7]);
+                                        StayPeriod stayPeriod = new StayPeriod(LocalDate.parse(checkIn), LocalDate.parse(checkOut));
+                                        Guest guest = hotelServiceData.findGuestById(id);
+                                        guest.setFirstName(name);
+                                        guest.setLastName(lastName);
+                                        Room room = hotelServiceData.findAvaibleRoom(roomType);
+                                        int size= bookingData.findAll().size();
+                                        Booking booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
+                                        bookingData.insert(booking);
+                                        Response response=new Response(Response.BOOKING_DONE);
+                                        objectOut.writeObject(response);
+                                        objectOut.flush();
                                         break;
-                                    }
+                                        case "2":
+                                             name = parts[1];
+                                             lastName = parts[2];
+                                             checkIn = parts[3];
+                                             checkOut = parts[4];
+                                             id = Integer.parseInt(parts[5]);
+                                            int roomNumber = Integer.parseInt(parts[6]);
+                                            guestAmount = Integer.parseInt(parts[7]);
+                                            stayPeriod = new StayPeriod(LocalDate.parse(checkIn), LocalDate.parse(checkOut));
+                                            guest = hotelServiceData.findGuestById(id);
+                                            guest.setFirstName(name);
+                                            guest.setLastName(lastName);
+                                            boolean avl=bookingData.checkAvailabilityOnSP(roomNumber,stayPeriod);
+                                            room=hotelServiceData.findRoomByID(roomNumber);
+                                            if (avl){
+                                                size= bookingData.findAll().size();
+                                                booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
+                                            bookingData.insert(booking);
+                                            response=new Response(Response.BOOKING_DONE);
+                                            objectOut.writeObject(response);
+                                            objectOut.flush();
+                                            }else {
+                                                response=new Response("ROOM_UNAVAILABLE");
+                                                objectOut.writeObject(response);
+                                                objectOut.flush();
+                                            }
+                                            break;
+                                            default:
+                                                break;
                                 }
-                                int guestAmount = Integer.parseInt(parts[7]);
-                                StayPeriod stayPeriod = new StayPeriod(LocalDate.parse(checkIn), LocalDate.parse(checkOut));
-                                Guest guest = hotelServiceData.findGuestById(id);
-                                guest.setFirstName(name);
-                                guest.setLastName(lastName);
-                                Room room = hotelServiceData.findAvaibleRoom(roomType);
-                                int size= bookingData.findAll().size();
-                                Booking booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
-                                bookingData.insert(booking);
-                                Response response=new Response(Response.BOOKING_DONE);
-                                objectOut.writeObject(response);
-                                objectOut.flush();
+
                             }
                             case Protocol.CANCEL_RESERVATION ->{
                                 Booking booking = (data instanceof Booking) ? (Booking) data : null;
@@ -231,6 +291,14 @@ public class HotelServer {
                                 }else response=new Response(Response.BOOKING_NOT_FOUND);
                                 objectOut.writeObject(response);
                                 objectOut.flush();
+                            }
+                            case Protocol.CHECK_AVAILABILITY_BY_STAY_PERIOD -> {
+                               Object[] dataArray=(data instanceof Object[]) ? (Object[]) data : null;
+                               StayPeriod stayPeriod=(StayPeriod) dataArray[0];
+                               int roomNumber=(int) dataArray[1];
+                               boolean availability= bookingData.checkAvailabilityOnSP(roomNumber,stayPeriod);
+                               objectOut.writeBoolean(availability);
+                               objectOut.flush();
                             }
 
                             default -> {

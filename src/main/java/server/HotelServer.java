@@ -183,6 +183,16 @@ public class HotelServer {
                                     objectOut.flush();
                                 }
                             }
+                            case Protocol.EDIT_RESERVATION ->{
+                                Booking booking = (data instanceof Booking) ? (Booking) data : null;
+                                booking.getRoom().setHotel(new Hotel(bookingData.findById(booking.getId()).getRoom().getHotel().getId()));
+                                boolean updated=bookingData.update(booking);
+                                if (updated) {
+                                    Response response=new Response(Response.BOOKING_DONE);
+                                    objectOut.writeObject(response);
+                                    objectOut.flush();
+                                }
+                            }
 
                             case Protocol.DELETE_HOTEL -> {
                                 int id= (int) data;
@@ -229,6 +239,7 @@ public class HotelServer {
                                         String checkOut = parts[4];
                                         int id = Integer.parseInt(parts[5]);
                                         String type = parts[6];
+                                        int hotelID= Integer.parseInt(parts[7]);
                                         RoomType roomType = RoomType.SINGLE;
                                         for (RoomType rType : RoomType.values()) {
                                             if (rType.getDescription().equals(type)) {
@@ -239,13 +250,18 @@ public class HotelServer {
                                         int guestAmount = Integer.parseInt(parts[7]);
                                         StayPeriod stayPeriod = new StayPeriod(LocalDate.parse(checkIn), LocalDate.parse(checkOut));
                                         Guest guest = hotelServiceData.findGuestById(id);
-                                        guest.setFirstName(name);
+                                        if (guest==null){
+                                            guest=new Guest(id);
+                                        }
+                                            guest.setFirstName(name);
                                         guest.setLastName(lastName);
                                         Room room = hotelServiceData.findAvaibleRoom(roomType);
+                                        room.setHotel(new Hotel(hotelID));
                                         int size= bookingData.findAll().size();
                                         Booking booking = new Booking( size+1, room, guest, guestAmount, stayPeriod);
                                         bookingData.insert(booking);
                                         Response response=new Response(Response.BOOKING_DONE);
+
                                         objectOut.writeObject(response);
                                         objectOut.flush();
                                         break;
